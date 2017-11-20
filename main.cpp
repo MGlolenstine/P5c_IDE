@@ -4,7 +4,6 @@
 #include <wx/wfstream.h>
 #include <wx-3.0/wx/textfile.h>
 #include <wx-3.0/wx/notebook.h>
-#include <wx-3.0/wx/splitter.h>
 
 #ifndef WX_PRECOMP
 
@@ -35,12 +34,10 @@ enum {
     ID_NoteBook = 6,
     ID_Run = 7,
     ID_ConsoleOut = 8,
-    ID_Last = 9
 };
 
 string currentProjectPath;
-char *IDEFolder = new char();
-int id = ID_Last;
+char *IDEFolder = new char(); // NOLINT
 
 class MyApp : public wxApp {
 public:
@@ -71,31 +68,30 @@ private:
 
     void OnRun(wxCommandEvent &event);
 
-    void OnStatusBarClick(wxCommandEvent &event);
+    //void OnStatusBarClick(wxCommandEvent &event);
 };
 
 class TextTab {
 public:
-    wxTextCtrl *text;
+    wxTextCtrl *text{};
     wxString name;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
     wxString filePath;
-    MyFrame *parent = nullptr;
-    wxPanel *panel;
-    wxSizer *sizer;
-    int id;
-    int panelId;
-    int textId;
+#pragma clang diagnostic pop
+    wxPanel *panel{};
+    int id{};
+    int panelId{};
+    int textId{};
 
     void createPanel(wxNotebook *nb, int width, int height, int id_) {
         id = id_;
         panelId = id++;
         panel = new wxPanel(nb, panelId);
-        //panel->FitInside();
         panel->SetSize(panel->GetParent()->GetSize());
         textId = id++;
         text = new wxTextCtrl(panel, textId, wxT(""), wxDefaultPosition, wxSize(width, height),
                               wxTE_MULTILINE | wxTE_DONTWRAP | wxHSCROLL | wxVSCROLL);
-        //text->FitInside();
         text->SetSize(text->GetParent()->GetSize());
     }
 };
@@ -112,7 +108,7 @@ bool fexists(const wxString &pathname);
 
 string getFilename(char path[]);
 
-void colorCode(TextTab tt);
+//void colorCode(TextTab tt);
 
 string getFullFilename(char path[]);
 
@@ -122,20 +118,21 @@ void Save();
 
 void resize();
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 void Alarm(int sig);
 
-int popen3(int fd[3], const char **const cmd);
+#pragma clang diagnostic pop
+
+//int popen3(int fd[3], const char **const cmd);
 
 wxString path; // NOLINT
 
 vector<TextTab> textTabs;
 wxWindow *window;
 wxNotebook *nb;
-wxString curProjectName;
+wxString curProjectName; // NOLINT
 wxTextCtrl *wtc;
-wxSplitterWindow *wxsw;
-wxPanel *notebook;
-wxPanel *console;
 
 wxIMPLEMENT_APP(MyApp); // NOLINT
 
@@ -174,7 +171,7 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "P5c IDE") {
     //End Find Home directory
     //Find current directory for G++
 #ifdef __LINUX__
-    readlink("/proc/self/exe", (char *) IDEFolder, 256);
+    readlink("/proc/self/exe", IDEFolder, 256);
 #endif
 #ifdef _WIN32
     GetModuleFileName(NULL, (char *) IDEFolder, 256);
@@ -187,7 +184,7 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "P5c IDE") {
     nb = new wxNotebook(window, ID_NoteBook, wxDefaultPosition,
                         wxSize(window->GetSize().x, window->GetSize().y / 2 + 50), wxNB_MULTILINE);
     TextTab tt = TextTab();
-    tt.createPanel(nb, nb->GetSize().x, nb->GetSize().y, nb->GetPageCount());
+    tt.createPanel(nb, nb->GetSize().x, nb->GetSize().y, static_cast<int>(nb->GetPageCount()));
     nb->AddPage(tt.panel, "New Page");
     textTabs.emplace_back(tt);
     wtc = new wxTextCtrl(window, ID_ConsoleOut, wxT(""), wxPoint(0, window->GetSize().y / 2 + 75),
@@ -219,7 +216,7 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "P5c IDE") {
     Bind(wxEVT_MENU, &MyFrame::OnRun, this, ID_Run);
 //    Bind(wxEVT_MENU, &MyFrame::OnStatusBarClick, this, GetStatusBar()->GetId());
     Bind(wxEVT_SIZE, &MyFrame::OnResize, this);
-    signal(SIGALRM, Alarm);
+    signal(SIGEV_SIGNAL, Alarm);
     alarm(1);
 }
 
@@ -275,18 +272,18 @@ void MyFrame::OnOpen(wxCommandEvent &event) {
     textTabs.clear();
     nb->DeleteAllPages();
     //nb->SetSize(wxSize(window->GetSize().x, window->GetSize().y/2-25));
-    for (int i = 0; i < files.size(); i++) {
+    for (auto &file : files) {
         TextTab tmp = TextTab();
         wxTextFile f;
-        f.Open(folder + "/" + files.at(i));
-        tmp.filePath = folder + "/" + files.at(i);
-        tmp.name = getFilename(const_cast<char *>(files.at(i).c_str()));
+        f.Open(folder + "/" + file);
+        tmp.filePath = folder + "/" + file;
+        tmp.name = getFilename(const_cast<char *>(file.c_str()));
         //cout << "Opening: " << folder + "/" + files.at(i) + ".cpp" << endl;
         wxString value = f.GetFirstLine();
         while (!f.Eof()) {
             value += "\n" + f.GetNextLine();
         }
-        tmp.createPanel(nb, nb->GetSize().x, nb->GetSize().y, nb->GetPageCount());
+        tmp.createPanel(nb, nb->GetSize().x, nb->GetSize().y, static_cast<int>(nb->GetPageCount()));
         tmp.text->SetValue(value);
         nb->AddPage(tmp.panel, tmp.name);
         textTabs.emplace_back(tmp);
@@ -323,7 +320,7 @@ void MyFrame::OnSaveAs(wxCommandEvent & WXUNUSED(event)) {
 
 void MyFrame::OnNewTab(wxCommandEvent & WXUNUSED(event)) {
     TextTab tmp = TextTab();
-    tmp.createPanel(nb, m_width, m_height, nb->GetPageCount());
+    tmp.createPanel(nb, m_width, m_height, static_cast<int>(nb->GetPageCount()));
     nb->AddPage(tmp.panel, "New tab");
     textTabs.emplace_back(tmp);
 }
@@ -353,9 +350,9 @@ void MyFrame::OnRun(wxCommandEvent & WXUNUSED(event)) {
     }
 }
 
-void MyFrame::OnStatusBarClick(wxCommandEvent & WXUNUSED(event)) {
-    cout << "I've been clicked!" << endl;
-}
+//void MyFrame::OnStatusBarClick(wxCommandEvent & WXUNUSED(event)) {
+//    cout << "I've been clicked!" << endl;
+//}
 
 void SaveAs(wxWindow *mf) {
     wxString sPath = path + "/P5c-sketchbook";
@@ -407,7 +404,7 @@ void SaveAs(wxWindow *mf) {
     wxTextFile projectFile(sPath1 + "/" + filename + ".p5c");
     // Create new project file
     textTabs.at(0).name = filename;
-    // TODO: Uredi vpis imena posamezne datoteke
+    // TODO: Add settable names for tabs (input name at creation)
     if (!projectFile.Exists()) {
         projectFile.Create();
     }
@@ -418,17 +415,17 @@ void SaveAs(wxWindow *mf) {
     projectFile.Close();
     // Create new Main file from current one
     if (!textTabs.empty()) {
-        for (int i = 0; i < textTabs.size(); i++) {
+        for (auto &textTab : textTabs) {
             //cout << "Opening file" << endl;
-            if (!exists(sPath1 + "/" + textTabs.at(i).name + ".cpp")) {
-                projectFile.Create(sPath1 + "/" + textTabs.at(i).name + ".cpp");
+            if (!exists(sPath1 + "/" + textTab.name + ".cpp")) {
+                projectFile.Create(sPath1 + "/" + textTab.name + ".cpp");
             }
-            projectFile.Open(sPath1 + "/" + textTabs.at(i).name + ".cpp");
+            projectFile.Open(sPath1 + "/" + textTab.name + ".cpp");
             //projectFile.Open(sPath1 + "/" + textTabs.at(i).name + ".cpp");
             //cout << "Opened file" << endl;
-            for (int j = 0; j < textTabs.at(i).text->GetNumberOfLines(); j++) {
+            for (int j = 0; j < textTab.text->GetNumberOfLines(); j++) {
                 //cout << "Adding line to file "<<filename << ": " << textTabs.at(i).text->GetLineText(j) << endl;
-                projectFile.AddLine(textTabs.at(i).text->GetLineText(j));
+                projectFile.AddLine(textTab.text->GetLineText(j));
             }
             projectFile.Write();
             projectFile.Close();
@@ -466,15 +463,14 @@ void Save() {
 string getFilename(char path[]) {
     int lastIndex = 0;
     char filename[256];
-    for (int i = 0; i < 256; i++) {
-        filename[i] = '\0';
+    for (char &i : filename) {
+        i = '\0';
     }
     for (int i = 0; i < strlen(path); i++) {
         if (path[i] == '/') {
             lastIndex = i + 1;
         }
     }
-    int length = 0;
     for (int i = lastIndex; i < strlen(path); i++) {
         if (path[i] == '.') {
             break;
@@ -530,34 +526,33 @@ bool fexists(const wxString &pathname) {
     return (stat(pathname.c_str(), &info) == 0);
 }
 
-void colorCode(TextTab tt) {
-    wxString text[tt.text->GetNumberOfLines()];
-    int n = nb->GetSelection();
-    for (TextTab tt : textTabs) {
-        if (tt.id == n) {
-            for (int i = 0; i < tt.text->GetNumberOfLines(); i++) {
-                text[i] = tt.text->GetLineText(i);
-            }
-        }
-    }
-    for (int i = 0; i < text->size(); i++) {
-        cout << text[i] << endl;
-    }
-    return;
-}
+//void colorCode(TextTab tt) {
+//    wxString text[tt.text->GetNumberOfLines()];
+//    int n = nb->GetSelection();
+//    for (TextTab tt : textTabs) {
+//        if (tt.id == n) {
+//            for (int i = 0; i < tt.text->GetNumberOfLines(); i++) {
+//                text[i] = tt.text->GetLineText(i);
+//            }
+//        }
+//    }
+//    for (int i = 0; i < text->size(); i++) {
+//        cout << text[i] << endl;
+//    }
+//    return;
+//}
 
 string getFullFilename(char path[]) {
     int lastIndex = 0;
     char filename[256];
-    for (int i = 0; i < 256; i++) {
-        filename[i] = '\0';
+    for (char &i : filename) {
+        i = '\0';
     }
     for (int i = 0; i < strlen(path); i++) {
         if (path[i] == '/') {
             lastIndex = i + 1;
         }
     }
-    int length = 0;
     for (int i = lastIndex; i < strlen(path); i++) {
         filename[i - lastIndex] = path[i];
     }
@@ -592,96 +587,9 @@ void resize() {
     }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 void Alarm(int sig) {
+#pragma clang diagnostic pop
     resize();
 }
-
-
-int popen3(int fd[3], const char **const cmd) {
-
-    int i, e;
-
-    int p[3][2];
-
-    pid_t pid;
-    // set all the FDs to invalid
-
-    for (i = 0; i < 3; i++)
-
-        p[i][0] = p[i][1] = -1;
-    // create the pipes
-
-    for (int i = 0; i < 3; i++)
-
-        if (pipe(p[i]))
-
-            goto error;
-    // and fork
-
-    pid = fork();
-
-    if (-1 == pid)
-
-        goto error;
-    // in the parent?
-
-    if (pid) {
-        // parent
-
-        fd[STDIN_FILENO] = p[STDIN_FILENO][1];
-
-        close(p[STDIN_FILENO][0]);
-
-        fd[STDOUT_FILENO] = p[STDOUT_FILENO][0];
-
-        close(p[STDOUT_FILENO][1]);
-
-        fd[STDERR_FILENO] = p[STDERR_FILENO][0];
-
-        close(p[STDERR_FILENO][1]);
-        // success
-
-        return 0;
-
-    } else {
-        // child
-
-        dup2(p[STDIN_FILENO][0], STDIN_FILENO);
-
-        close(p[STDIN_FILENO][1]);
-
-        dup2(p[STDOUT_FILENO][1], STDOUT_FILENO);
-
-        close(p[STDOUT_FILENO][0]);
-
-        dup2(p[STDERR_FILENO][1], STDERR_FILENO);
-
-        close(p[STDERR_FILENO][0]);
-        // here we try and run it
-
-        execv(*cmd, const_cast<char *const *>(cmd));
-        // if we are there, then we failed to launch our program
-
-        perror("Could not launch");
-
-        fprintf(stderr, " \"%s\"\n", *cmd);
-
-        _exit(EXIT_FAILURE);
-
-    }
-
-    error:
-    // preserve original error
-
-    e = errno;
-    for (i = 0; i < 3; i++) {
-
-        close(p[i][0]);
-
-        close(p[i][1]);
-
-    }
-    errno = e;
-    return -1;
-}
-
