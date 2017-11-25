@@ -185,6 +185,8 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "P5c IDE") {
                         wxSize(window->GetSize().x, window->GetSize().y / 2 + 50), wxNB_MULTILINE);
     TextTab tt = TextTab();
     tt.createPanel(nb, nb->GetSize().x, nb->GetSize().y, static_cast<int>(nb->GetPageCount()));
+    tt.panel->SetSize(tt.panel->GetParent()->GetSize());
+    tt.text->SetSize(tt.text->GetParent()->GetSize());
     nb->AddPage(tt.panel, "New Page");
     textTabs.emplace_back(tt);
     wtc = new wxTextCtrl(window, ID_ConsoleOut, wxT(""), wxPoint(0, window->GetSize().y / 2 + 75),
@@ -216,8 +218,8 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "P5c IDE") {
     Bind(wxEVT_MENU, &MyFrame::OnRun, this, ID_Run);
 //    Bind(wxEVT_MENU, &MyFrame::OnStatusBarClick, this, GetStatusBar()->GetId());
     Bind(wxEVT_SIZE, &MyFrame::OnResize, this);
-    signal(SIGEV_SIGNAL, Alarm);
-    alarm(1);
+//    signal(SIGEV_SIGNAL, Alarm);
+//    alarm(1);
 }
 
 void MyFrame::OnExit(wxCommandEvent &event) {
@@ -321,7 +323,13 @@ void MyFrame::OnSaveAs(wxCommandEvent & WXUNUSED(event)) {
 void MyFrame::OnNewTab(wxCommandEvent & WXUNUSED(event)) {
     TextTab tmp = TextTab();
     tmp.createPanel(nb, m_width, m_height, static_cast<int>(nb->GetPageCount()));
-    nb->AddPage(tmp.panel, "New tab");
+    wxTextEntryDialog wted(this, "Insert name for the new tab: ");
+    if (wted.ShowModal() == wxID_OK) {
+        tmp.name = wted.GetValue();
+    } else {
+        tmp.name = "New Tab";
+    }
+    nb->AddPage(tmp.panel, tmp.name);
     textTabs.emplace_back(tmp);
 }
 
@@ -404,7 +412,6 @@ void SaveAs(wxWindow *mf) {
     wxTextFile projectFile(sPath1 + "/" + filename + ".p5c");
     // Create new project file
     textTabs.at(0).name = filename;
-    // TODO: Add settable names for tabs (input name at creation)
     if (!projectFile.Exists()) {
         projectFile.Create();
     }
@@ -582,14 +589,11 @@ void resize() {
     wtc->SetPosition(wxPoint(0, window->GetSize().y / 2 + 75));
     wtc->SetSize(wxSize(window->GetSize().x, window->GetSize().y / 2 - 75));
     for (TextTab tt : textTabs) {
-        tt.text->SetSize(tt.text->GetParent()->GetSize());
         tt.panel->SetSize(tt.panel->GetParent()->GetSize());
+        tt.text->SetSize(tt.text->GetParent()->GetSize());
     }
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 void Alarm(int sig) {
-#pragma clang diagnostic pop
     resize();
 }
